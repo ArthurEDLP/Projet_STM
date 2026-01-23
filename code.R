@@ -1,11 +1,12 @@
 
-### ------------------------------------------------------------------
-# Chargement des librairies
+### Chargement des librairies ------------------------------------------------------------------
 
 library(dplyr)
+library(readxl)
 
-### ------------------------------------------------------------------
-# Importation des données
+### Importation des données --------------------------------------------------------------------
+
+## OR
 
 # On est en dollars
 
@@ -21,6 +22,11 @@ gold <- gold |>
     Variation_pct = `Variation..`
   )
 
+## GPR
+
+GPR <- read_excel("data/GPR.xls")
 
 
-hfhghg
+## MSCI
+
+MSCI <- read_excel("data/MSCI.xlsx")
