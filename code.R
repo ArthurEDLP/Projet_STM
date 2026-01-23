@@ -1,4 +1,3 @@
-
 ### Chargement des librairies ------------------------------------------------------------------
 
 library(dplyr)
@@ -30,3 +29,8 @@ GPR <- read_excel("data/GPR.xls")
 ## MSCI
 
 MSCI <- read_excel("data/MSCI.xlsx")
+
+## US DOLLAR INDEX
+
+USDI <- read.csv2("data/US Dollar Index.csv", sep=",") 
+
