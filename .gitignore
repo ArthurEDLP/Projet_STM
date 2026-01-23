@@ -1,4 +1,12 @@
-.Rproj.user
+# RStudio / R
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj
+
+# OS
+.DS_Store
+data/*.csv
+data/*.xlsx
+data/*.xls
