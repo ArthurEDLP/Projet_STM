@@ -14,10 +14,7 @@ gold <- read.csv2("data/OR.csv", sep=",")
 
 ## GPR
 
-GPR <- read_excel("data/GPR.xls")
-
-GPR <- GPR[, c("month", "GPR")]
-
+# GPR <- read_excel("data/GPR.xls")
 
 ## MSCI
 
@@ -27,7 +24,22 @@ MSCI <- read_excel("data/MSCI.xlsx")
 
 USDI <- read.csv2("data/US Dollar Index.csv", sep=",") 
 
+## EPU
+
+EPU <- read.csv2("data/GEPUCURRENT.csv", sep=",")
+
+## DFII10
+
+DFII10 <- read.csv2("data/DFII10.csv", sep=",")
+
+## NFCI
+
+NFCI <- read.csv2("data/NFCI.csv", sep=",")
+
+
 # Nettoyage des données --------------------------------------------------------------------
+
+# GPR <- GPR[, c("month", "GPR")]
 
 
 liste_data <- list(gold, USDI)
@@ -88,3 +100,163 @@ USDI$Volume <- ifelse(
     NA
   )
 )
+
+gold$Dernier <- as.numeric(
+  gsub(",", ".", gsub("\\.", "", gold$Dernier))
+)
+
+DFII10$DFII10 <- as.numeric(DFII10$DFII10)
+EPU$GEPUCURRENT <- as.numeric(EPU$GEPUCURRENT)
+NFCI$NFCI <- as.numeric(NFCI$NFCI)
+
+# tRAANSFORMATION EN DATE ET LES DATES
+
+liste_autres <- list(DFII10, EPU, NFCI)
+
+library(lubridate)
+
+liste_autres <- lapply(liste_autres, function(data) {
+  
+  data <- data |>
+    rename(Date = observation_date)
+  
+  data$Date <- as.Date(data$Date, format = "%Y-%m-%d")
+  
+  data <- data |>
+    filter(
+      (year(Date) > 2003 | (year(Date) == 2003 & month(Date) >= 1)) &
+        (year(Date) < 2025 | (year(Date) == 2025 & month(Date) <= 12))
+    )
+  
+  data
+})
+
+
+
+
+DFII10 <- liste_autres[[1]]
+EPU <- liste_autres[[2]]
+NFCI <- liste_autres[[3]]
+
+MSCI$dates <- as.Date(
+  paste0(
+    substr(MSCI$dates, 1, 4), "-",                 # année
+    sprintf("%02d", as.numeric(substr(MSCI$dates, 6, nchar(MSCI$dates)))), 
+    "-01"
+  )
+)
+
+
+gold <- gold |>
+  filter(
+    (year(Date) > 2003 | (year(Date) == 2003 & month(Date) >= 1)) &
+      (year(Date) < 2025 | (year(Date) == 2025 & month(Date) <= 12))
+  )
+
+USDI <- USDI |>
+  filter(
+    (year(Date) > 2003 | (year(Date) == 2003 & month(Date) >= 1)) &
+      (year(Date) < 2025 | (year(Date) == 2025 & month(Date) <= 12))
+  )
+
+MSCI <- MSCI |>
+  filter(
+    (year(dates) > 2003 | (year(dates) == 2003 & month(dates) >= 1)) &
+      (year(dates) < 2025 | (year(dates) == 2025 & month(dates) <= 12))
+  )
+
+
+NFCI <- NFCI |>
+  mutate(YearMonth = floor_date(Date, "month")) |>
+  group_by(YearMonth) |>
+  summarise(
+    NFCI = mean(NFCI, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+# Test de stationnarité : --------------------------------------------------------
+library(tseries)   # adf.test, kpss.test
+
+# DFII10
+
+# ADF
+adf.test(DFII10$DFII10) 
+# 0.7348 > 0.05 La série n’est pas stationnaire en niveau
+
+# KPSS
+kpss.test(DFII10$DFII10)
+# <0.05 La série n’est pas stationnaire en niveau
+
+# Gold
+
+# ADF
+adf.test(gold$Dernier) 
+# 0.06297 > 0.05 La série n’est pas stationnaire en niveau à 5%
+
+# KPSS
+kpss.test(gold$Dernier)
+# <0.05 La série n’est pas stationnaire en niveau
+
+# EPU
+
+# ADF
+adf.test(EPU$GEPUCURRENT) 
+# 0.01929 < 0.05 La série est  stationnaire à 5%  !!!!
+
+# KPSS
+kpss.test(EPU$GEPUCURRENT)
+# <0.05 La série n’est pas stationnaire en niveau
+
+# USDI
+
+# ADF
+adf.test(USDI$Dernier) 
+# 0.5932 > 0.05 La série n’est pas stationnaire en niveau
+
+# KPSS
+kpss.test(USDI$Dernier)
+# <0.05 La série n’est pas stationnaire en niveau
+
+# NFCI
+
+# ADF
+adf.test(NFCI$NFCI) 
+#  0.1886 > 0.05 La série n’est pas stationnaire en niveau
+
+# KPSS
+kpss.test(NFCI$NFCI)
+# 0.1 > 0.05 La série est stationnaire en niveau !!!!
+
+# MSCI
+
+# ADF
+adf.test(MSCI$MSCI) 
+#  0.9855 > 0.05 La série n’est pas stationnaire en niveau
+
+# KPSS
+kpss.test(MSCI$MSCI)
+# <0.05 La série n’est pas stationnaire en niveau
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
