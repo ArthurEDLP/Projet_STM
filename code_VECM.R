@@ -25,63 +25,63 @@ library(tsDyn)
 # ------------------------------------------------------------
 
 # Helper : passer toute date en début de mois
-to_month <- function(x) floor_date(as.Date(x), "month")
+to_month <- function(x) floor_date(as.Date(x), "month")  
 
-gold_m <- gold %>%
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%                            # si tu as du quotidien, sinon ça ne change rien
+gold_m <- gold |>
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>                            # si tu as du quotidien, sinon ça ne change rien
   summarise(GOLD = mean(Dernier, na.rm = TRUE), .groups = "drop")
 
-usdi_m <- USDI %>%
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%
+usdi_m <- USDI |>
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>
   summarise(USDI = mean(Dernier, na.rm = TRUE), .groups = "drop")
 
-dfii_m <- DFII10 %>%
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%
+dfii_m <- DFII10 |>
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>
   summarise(DFII10 = mean(DFII10, na.rm = TRUE), .groups = "drop")
 
-msci_m <- MSCI %>%
-  rename(Date = dates) %>%
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%
+msci_m <- MSCI |>
+  rename(Date = dates) |>
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>
   summarise(MSCI = mean(MSCI, na.rm = TRUE), .groups = "drop")
 
-epu_m <- EPU %>%
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%
+epu_m <- EPU |>
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>
   summarise(EPU = mean(GEPUCURRENT, na.rm = TRUE), .groups = "drop")
 
-nfci_m <- NFCI %>%
-  rename(Date = YearMonth) %>%                  # tu avais YearMonth comme date mensuelle
-  mutate(Date = to_month(Date)) %>%
-  group_by(Date) %>%
+nfci_m <- NFCI |>
+  rename(Date = YearMonth) |>                  # on change YearMonth pour avoir date mensuelle
+  mutate(Date = to_month(Date)) |>
+  group_by(Date) |>
   summarise(NFCI = mean(NFCI, na.rm = TRUE), .groups = "drop")
 
 # ------------------------------------------------------------
 # 1) Fusion sur l'intersection des dates (important pour VECM)
 # ------------------------------------------------------------
-df_all <- gold_m %>%
-  inner_join(usdi_m, by = "Date") %>%
-  inner_join(dfii_m, by = "Date") %>%
-  inner_join(msci_m, by = "Date") %>%
-  inner_join(epu_m,  by = "Date") %>%
-  inner_join(nfci_m, by = "Date") %>%
+df_all <- gold_m |>
+  inner_join(usdi_m, by = "Date") |>
+  inner_join(dfii_m, by = "Date") |>
+  inner_join(msci_m, by = "Date") |>
+  inner_join(epu_m,  by = "Date") |>
+  inner_join(nfci_m, by = "Date") |>
   filter(Date >= as.Date("2003-01-01"),
-         Date <= as.Date("2025-12-01")) %>%
+         Date <= as.Date("2025-12-01")) |>
   arrange(Date)
 
 # Check rapides
 stopifnot(all(!is.na(df_all$Date)))
-# Si tu veux voir la couverture :
+# Pour voir la couverture :
 print(range(df_all$Date))
 print(nrow(df_all))
 
 # ------------------------------------------------------------
 # 2) Transformations : logs sur prix/indices strictement positifs
 # ------------------------------------------------------------
-df_all <- df_all %>%
+df_all <- df_all |>
   mutate(
     lGOLD = log(GOLD),
     lUSDI = log(USDI),
@@ -89,11 +89,11 @@ df_all <- df_all %>%
   )
 
 # Endogènes (I(1)) en niveau
-Y <- df_all %>%
+Y <- df_all |>
   dplyr::select(lGOLD, lUSDI, DFII10, lMSCI)
 
 # Exogènes stationnaires (I(0)) : EPU + NFCI
-Xexo <- df_all %>%
+Xexo <- df_all |>
   dplyr::select(EPU, NFCI)
 
 
@@ -104,7 +104,7 @@ Xexo <- df_all %>%
 lag_sel <- VARselect(Y, lag.max = 12, type = "const")
 print(lag_sel$selection)
 
-# Choix pratique : prendre le p suggéré par AIC (ou SC), ici AIC
+# Choix pratique : prendre le p suggéré par AIC, ici AIC
 p <- lag_sel$selection[["AIC(n)"]]
 if (is.na(p)) p <- 2
 cat("p choisi =", p, "\n")
@@ -145,6 +145,58 @@ r = 0  | 47.58 25.56 28.14 33.24
 r <- 1
 
 # ------------------------------------------------------------
+# 6.0) Choix de la spécification déterministe du VECM
+# ------------------------------------------------------------
+
+library(tsDyn)
+
+suppressWarnings({
+  C1 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
+             include = "none", exogen = as.matrix(Xexo))
+})
+
+suppressWarnings({
+  C2 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
+             LRinclude = "const", exogen = as.matrix(Xexo))
+})
+
+suppressWarnings({
+  C3 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
+             include = "const", exogen = as.matrix(Xexo))
+})
+
+suppressWarnings({
+  C4 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
+             LRinclude = "trend", exogen = as.matrix(Xexo))
+})
+
+suppressWarnings({
+  C5 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
+             include = "both", exogen = as.matrix(Xexo))
+})
+
+IC <- dplyr::bind_rows(
+  data.frame(Model = "C1_none",       AIC = AIC(C1), BIC = BIC(C1)),
+  data.frame(Model = "C2_LRconst",    AIC = AIC(C2), BIC = BIC(C2)),
+  data.frame(Model = "C3_const",      AIC = AIC(C3), BIC = BIC(C3)),
+  data.frame(Model = "C4_LRtrend",    AIC = AIC(C4), BIC = BIC(C4)),
+  data.frame(Model = "C5_both",       AIC = AIC(C5), BIC = BIC(C5))
+) %>% arrange(BIC)
+
+print(IC)
+
+# Choix final :
+# Malgré un BIC légèrement plus faible pour LRinclude = "const",
+# nous retenons include = "const" pour des raisons économiques
+# (prix et indices financiers non stationnaires autour d'un niveau fixe).
+
+"Après avoir déterminé le nombre de retards et le rang de cointégration,
+différentes spécifications déterministes du VECM ont été comparées.
+Bien que les critères d’information favorisent marginalement l’inclusion d’une constante dans l’espace de cointégration,
+la spécification avec constante hors de la relation de long terme est retenue pour des raisons économiques,
+conformément aux standards de la littérature macro-financière.
+"
+# ------------------------------------------------------------
 # 6) Estimation VECM avec tsDyn en incluant exogènes (EPU, NFCI)
 #    Attention : dans tsDyn, lag = nombre de retards en Δ (p)
 # ------------------------------------------------------------
@@ -153,7 +205,7 @@ vecm_tsdyn <- VECM(
   lag     = p,
   r       = r,
   estim   = "ML",
-  include = "const",     # constante hors/avec espace selon ta logique
+  include = "const",     
   exogen  = as.matrix(Xexo)
 )
 
