@@ -109,7 +109,7 @@ DFII10$DFII10 <- as.numeric(DFII10$DFII10)
 EPU$GEPUCURRENT <- as.numeric(EPU$GEPUCURRENT)
 NFCI$NFCI <- as.numeric(NFCI$NFCI)
 
-# tRAANSFORMATION EN DATE ET LES DATES
+# TRANSFORMATION EN DATE ET LES DATES
 
 liste_autres <- list(DFII10, EPU, NFCI)
 
@@ -188,53 +188,58 @@ adf.test(DFII10$DFII10)
 kpss.test(DFII10$DFII10)
 # <0.05 La série n’est pas stationnaire en niveau
 
+#####################
 # Gold
+#####################
 
-# ADF
 adf.test(gold$Dernier) 
 # 0.06297 > 0.05 La série n’est pas stationnaire en niveau à 5%
 
-# KPSS
+
 kpss.test(gold$Dernier)
 # <0.05 La série n’est pas stationnaire en niveau
 
+#####################
 # EPU
+#####################
 
-# ADF
 adf.test(EPU$GEPUCURRENT) 
 # 0.01929 < 0.05 La série est  stationnaire à 5%  !!!!
 
-# KPSS
+
 kpss.test(EPU$GEPUCURRENT)
 # <0.05 La série n’est pas stationnaire en niveau
 
+#####################
 # USDI
+#####################
 
-# ADF
 adf.test(USDI$Dernier) 
 # 0.5932 > 0.05 La série n’est pas stationnaire en niveau
 
-# KPSS
+
 kpss.test(USDI$Dernier)
 # <0.05 La série n’est pas stationnaire en niveau
 
+#####################
 # NFCI
+#####################
 
-# ADF
 adf.test(NFCI$NFCI) 
 #  0.1886 > 0.05 La série n’est pas stationnaire en niveau
 
-# KPSS
+
 kpss.test(NFCI$NFCI)
 # 0.1 > 0.05 La série est stationnaire en niveau !!!!
 
+#####################
 # MSCI
+#####################
 
-# ADF
 adf.test(MSCI$MSCI) 
 #  0.9855 > 0.05 La série n’est pas stationnaire en niveau
 
-# KPSS
+
 kpss.test(MSCI$MSCI)
 # <0.05 La série n’est pas stationnaire en niveau
 
