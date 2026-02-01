@@ -13,6 +13,7 @@ library(vars)
 library(urca)
 library(tsDyn)
 
+
 # ------------------------------------------------------------
 # 0) Harmoniser les dates (mensuel) + préparer séries
 #    Hypothèses sur tes objets :
@@ -24,12 +25,12 @@ library(tsDyn)
 #    NFCI: YearMonth, NFCI (déjà agrégé en mensuel dans ton code)
 # ------------------------------------------------------------
 
-# Helper : passer toute date en début de mois
+# Passer toute date en début de mois
 to_month <- function(x) floor_date(as.Date(x), "month")  
 
 gold_m <- gold |>
   mutate(Date = to_month(Date)) |>
-  group_by(Date) |>                            # si tu as du quotidien, sinon ça ne change rien
+  group_by(Date) |>                            
   summarise(GOLD = mean(Dernier, na.rm = TRUE), .groups = "drop")
 
 usdi_m <- USDI |>
@@ -104,14 +105,14 @@ Xexo <- df_all |>
 lag_sel <- VARselect(Y, lag.max = 12, type = "const")
 print(lag_sel$selection)
 
-# Choix pratique : prendre le p suggéré par AIC, ici AIC
+# Prendre le p suggéré par AIC, ici AIC
 p <- lag_sel$selection[["AIC(n)"]]
 if (is.na(p)) p <- 2
 cat("p choisi =", p, "\n")
 
 # ------------------------------------------------------------
 # 4) Test de cointégration de Johansen (urca)
-#    ecdet: "const" ou "trend" (souvent "const" en macro-finance)
+#    ecdet: "const" ou "trend" 
 #    K = p + 1
 # ------------------------------------------------------------
 K <- p + 1
@@ -139,7 +140,7 @@ summary(jo_eigen)
 r <= 3 |  5.03  7.52  9.24 12.97
 r <= 2 |  9.77 13.75 15.67 20.20
 r <= 1 | 16.91 19.77 22.00 26.81
-r = 0  | 47.58 25.56 28.14 33.24
+r = 0  | 47.58 25.56 28.14 33.24   rejet à 10%
 "
 
 r <- 1
@@ -148,7 +149,6 @@ r <- 1
 # 6.0) Choix de la spécification déterministe du VECM
 # ------------------------------------------------------------
 
-library(tsDyn)
 
 suppressWarnings({
   C1 <- VECM(as.matrix(Y), lag = p, r = r, estim = "ML",
@@ -226,6 +226,13 @@ serial.test(var_level, lags.pt = 16, type = "PT.asymptotic")
 arch.test(var_level, lags.multi = 5)
 normality.test(var_level)
 
+# on test la stabilité
+
+var_fit <- VAR(Y, p = p, type = "const")
+
+stability(var_fit, type = "OLS-CUSUM")
+plot(stability(var_fit, type = "OLS-CUSUM"))
+
 # ------------------------------------------------------------
 # 8) IRF : "valeur refuge" -> choc d'incertitude et réponse de l'or
 #    NOTE : vec2var ici ne contient pas directement EPU/NFCI en exogènes.
@@ -252,3 +259,12 @@ ir_gold_dfii <- irf(var_level,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_dfii)
+
+# A) IRF internes (ex: choc IMSCI -> réponse lGOLD)
+ir_gold_IMSCI <- irf(var_level,
+                    impulse = "lMSCI",
+                    response = "lGOLD",
+                    n.ahead = 36,
+                    boot = TRUE,
+                    runs = 500)
+plot(ir_gold_IMSCI) 
