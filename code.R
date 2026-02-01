@@ -245,9 +245,51 @@ kpss.test(MSCI$MSCI)
 
 
 
+# Test de saisonnalité : --------------------------------------------------------
 
 
+liste_des_series <- list(
+  DFII10 = DFII10$DFII10,
+  GOLD  = gold$Dernier,
+  EPU   = EPU$GEPUCURRENT,
+  USDI  = USDI$Dernier,
+  NFCI  = NFCI$NFCI,
+  MSCI  = MSCI$MSCI
+)
 
+
+liste_des_series <- lapply(liste_des_series, function(x) ts(as.numeric(x), frequency = 12)) # 12 = mensuel
+
+library(TSA)
+
+for (nm in names(liste_des_series)) {
+  
+  s <- liste_des_series[[nm]]  # Récupère le nom du dataframe (string)
+
+  cat("\n=============================\n")
+  cat("Série :", nm, "\n")
+  cat("=============================\n")
+  
+  saison <- cycle(s)
+
+  print(
+    tryCatch(
+      kruskal.test(as.numeric(s) ~ factor(saison)),
+      error = function(e) e
+    )
+  )
+  
+  # Différence première + périodogramme
+  d1 <- diff(s, differences = 1)
+  
+  if (length(na.omit(d1)) > 10) {
+    periodogram(d1, main = paste("Périodogramme (diff. 1ère) :", nm))
+  } else {
+    cat("Différence première trop courte -> périodogramme ignoré.\n")
+  }
+  
+  
+}
 
 
 
