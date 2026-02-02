@@ -369,7 +369,7 @@ for (nm in names(liste_des_series)) {
      dMSCI = log_return_pct(MSCI),
      
      # Indices/taux -> différences
-     dDFII10 = diff_simple(DFII10),
+     dDFII10 = diff_simple(DFII10), 
      dEPU    = diff_simple(EPU),
      dNFCI   = diff_simple(NFCI)
    ) %>%
