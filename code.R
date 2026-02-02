@@ -290,60 +290,6 @@ for (nm in names(liste_des_series)) {
   
   
 }
-# Valeurs Aberrantes : --------------------------------------------------------
-
-
- #Visualisation des valeurs aberrantes (boxplots
-library(ggplot2)
-library(tidyr)
-
-df_long_var <- df_var %>%
-  pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
-
-ggplot(df_long_var, aes(x = Serie, y = Variation)) +
-  geom_boxplot(outlier.colour = "red", outlier.alpha = 0.6) +
-  coord_flip() +
-  labs(
-    title = "Détection visuelle des valeurs aberrantes (variations)",
-    x = "",
-    y = "Variation"
-  ) +
-  theme_minimal()
-
- #Détection statistique par méthode IQR (robuste)
- detect_outliers_iqr <- function(x) {
-  q1 <- quantile(x, 0.25, na.rm = TRUE)
-  q3 <- quantile(x, 0.75, na.rm = TRUE)
-  iqr <- q3 - q1
-  (x < (q1 - 1.5 * iqr)) | (x > (q3 + 1.5 * iqr))
- }
-
- outliers_iqr <- df_var %>%
-  summarise(across(
-    -YearMonth,
-    ~ sum(detect_outliers_iqr(.x), na.rm = TRUE),
-    .names = "outliers_{.col}"
-  ))
-
- outliers_iqr
- 
- #Détection par z-score robuste (MAD) : Plus fiable que le z-score classique.
- zscore_robust <- function(x) {
-   med <- median(x, na.rm = TRUE)
-   mad_val <- mad(x, na.rm = TRUE)
-   (x - med) / mad_val
- }
- 
- outliers_mad <- df_var %>%
-   summarise(across(
-     -YearMonth,
-     ~ sum(abs(zscore_robust(.x)) > 3, na.rm = TRUE),
-     .names = "outliers_{.col}"
-   ))
- 
- outliers_mad
- 
-
 
 
 # Illustration des series : --------------------------------------------------------
@@ -450,8 +396,60 @@ ggplot(df_long_var, aes(x = Serie, y = Variation)) +
  
  
  
-
-
+ # Valeurs Aberrantes : --------------------------------------------------------
+ 
+ 
+ #Visualisation des valeurs aberrantes (boxplots
+ library(ggplot2)
+ library(tidyr)
+ 
+ df_long_var <- df_var %>%
+   pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
+ 
+ ggplot(df_long_var, aes(x = Serie, y = Variation)) +
+   geom_boxplot(outlier.colour = "red", outlier.alpha = 0.6) +
+   coord_flip() +
+   labs(
+     title = "Détection visuelle des valeurs aberrantes (variations)",
+     x = "",
+     y = "Variation"
+   ) +
+   theme_minimal()
+ 
+ #Détection statistique par méthode IQR (robuste)
+ detect_outliers_iqr <- function(x) {
+   q1 <- quantile(x, 0.25, na.rm = TRUE)
+   q3 <- quantile(x, 0.75, na.rm = TRUE)
+   iqr <- q3 - q1
+   (x < (q1 - 1.5 * iqr)) | (x > (q3 + 1.5 * iqr))
+ }
+ 
+ outliers_iqr <- df_var %>%
+   summarise(across(
+     -YearMonth,
+     ~ sum(detect_outliers_iqr(.x), na.rm = TRUE),
+     .names = "outliers_{.col}"
+   ))
+ 
+ outliers_iqr
+ 
+ #Détection par z-score robuste (MAD) : Plus fiable que le z-score classique.
+ zscore_robust <- function(x) {
+   med <- median(x, na.rm = TRUE)
+   mad_val <- mad(x, na.rm = TRUE)
+   (x - med) / mad_val
+ }
+ 
+ outliers_mad <- df_var %>%
+   summarise(across(
+     -YearMonth,
+     ~ sum(abs(zscore_robust(.x)) > 3, na.rm = TRUE),
+     .names = "outliers_{.col}"
+   ))
+ 
+ outliers_mad
+ 
+ 
 
 
 
