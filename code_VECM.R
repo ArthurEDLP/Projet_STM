@@ -238,8 +238,6 @@ plot(stability(var_fit, type = "OLS-CUSUM"))
 #    NOTE : vec2var ici ne contient pas directement EPU/NFCI en exogènes.
 #    Deux options :
 #      A) faire IRF sur chocs internes (USDI, DFII10, MSCI) -> proxy
-#      B) estimer un VARX/VECMX structurel via tsDyn (plus avancé)
-#    On te donne A) immédiatement + une B) simple avec tsDyn::irf
 # ------------------------------------------------------------
 
 # A) IRF internes (ex: choc USDI -> réponse lGOLD)
