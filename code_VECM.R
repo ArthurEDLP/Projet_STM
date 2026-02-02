@@ -244,7 +244,7 @@ plot(stability(var_fit, type = "OLS-CUSUM"))
 ir_gold_usdi <- irf(var_level,
                     impulse = "lUSDI",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_usdi)
@@ -253,7 +253,7 @@ plot(ir_gold_usdi)
 ir_gold_dfii <- irf(var_level,
                     impulse = "DFII10",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_dfii)
@@ -262,7 +262,48 @@ plot(ir_gold_dfii)
 ir_gold_IMSCI <- irf(var_level,
                     impulse = "lMSCI",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_IMSCI) 
+
+# ------------------------------------------------------------
+# 9) FEVD : Décomposition de la variance des erreurs de prévision
+# ------------------------------------------------------------
+fevd_res <- fevd(var_level, n.ahead = 12)
+
+# Afficher les tableaux (parts expliquées à chaque horizon)
+print(fevd_res)
+
+# Graphiques automatiques (un panel par équation)
+plot(fevd_res)
+
+# ------------------------------------------------------------
+# 9bis) FEVD : barplots empilés (style "figure")
+# ------------------------------------------------------------
+
+# Fonction pour tracer un barplot empilé pour une variable donnée
+plot_fevd_stacked <- function(fevd_obj, varname, main_title = NULL) {
+  M <- fevd_obj[[varname]]  # matrice horizons x chocs
+  # convertir en % (optionnel mais plus lisible)
+  M_pct <- 100 * M
+  
+  # barplot attend chocs x horizons
+  barplot(t(M_pct),
+          beside = FALSE,
+          xlab = "Horizon",
+          ylab = "Pourcentage",
+          main = ifelse(is.null(main_title),
+                        paste("FEVD for", varname),
+                        main_title),
+          legend.text = colnames(M_pct),
+          args.legend = list(x = "right", bty = "o", cex = 0.8))
+}
+
+# Tracer FEVD pour toutes les équations (une par une)
+par(mfrow = c(4,1), mar = c(4,4,2,8))  # marge à droite pour la légende
+plot_fevd_stacked(fevd_res, "lGOLD")
+plot_fevd_stacked(fevd_res, "lUSDI")
+plot_fevd_stacked(fevd_res, "DFII10")
+plot_fevd_stacked(fevd_res, "lMSCI")
+par(mfrow = c(1,1))
