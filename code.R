@@ -290,6 +290,166 @@ for (nm in names(liste_des_series)) {
   
   
 }
+# Valeurs Aberrantes : --------------------------------------------------------
+
+
+ #Visualisation des valeurs aberrantes (boxplots
+library(ggplot2)
+library(tidyr)
+
+df_long_var <- df_var %>%
+  pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
+
+ggplot(df_long_var, aes(x = Serie, y = Variation)) +
+  geom_boxplot(outlier.colour = "red", outlier.alpha = 0.6) +
+  coord_flip() +
+  labs(
+    title = "Détection visuelle des valeurs aberrantes (variations)",
+    x = "",
+    y = "Variation"
+  ) +
+  theme_minimal()
+
+ #Détection statistique par méthode IQR (robuste)
+ detect_outliers_iqr <- function(x) {
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr <- q3 - q1
+  (x < (q1 - 1.5 * iqr)) | (x > (q3 + 1.5 * iqr))
+ }
+
+ outliers_iqr <- df_var %>%
+  summarise(across(
+    -YearMonth,
+    ~ sum(detect_outliers_iqr(.x), na.rm = TRUE),
+    .names = "outliers_{.col}"
+  ))
+
+ outliers_iqr
+ 
+ #Détection par z-score robuste (MAD) : Plus fiable que le z-score classique.
+ zscore_robust <- function(x) {
+   med <- median(x, na.rm = TRUE)
+   mad_val <- mad(x, na.rm = TRUE)
+   (x - med) / mad_val
+ }
+ 
+ outliers_mad <- df_var %>%
+   summarise(across(
+     -YearMonth,
+     ~ sum(abs(zscore_robust(.x)) > 3, na.rm = TRUE),
+     .names = "outliers_{.col}"
+   ))
+ 
+ outliers_mad
+ 
+
+
+
+# Illustration des series : --------------------------------------------------------
+
+
+ # Mise à la mème freq pour comparer 
+ library(dplyr)
+ library(lubridate)
+
+ # --- GOLD mensuel (dernier du mois) ---
+ gold_m <- gold %>%
+  mutate(YearMonth = floor_date(Date, "month")) %>%
+  group_by(YearMonth) %>%
+  summarise(GOLD = last(Dernier), .groups = "drop")
+
+ # --- USDI mensuel (dernier du mois) ---
+ USDI_m <- USDI %>%
+  mutate(YearMonth = floor_date(Date, "month")) %>%
+  group_by(YearMonth) %>%
+  summarise(USDI = last(Dernier), .groups = "drop")
+
+ # --- DFII10/EPU mensuel (moyenne du mois si daily ; sinon ça ne change rien) ---
+ DFII10_m <- DFII10 %>%
+  mutate(YearMonth = floor_date(Date, "month")) %>%
+  group_by(YearMonth) %>%
+  summarise(DFII10 = mean(DFII10, na.rm = TRUE), .groups = "drop")
+
+ EPU_m <- EPU %>%
+  mutate(YearMonth = floor_date(Date, "month")) %>%
+  group_by(YearMonth) %>%
+  summarise(EPU = mean(GEPUCURRENT, na.rm = TRUE), .groups = "drop")
+
+ # --- NFCI : tu l'as déjà agrégé, je renomme propre ---
+ NFCI_m <- NFCI %>%
+  rename(YearMonth = YearMonth)
+
+ # --- MSCI mensuel (déjà mensuel) ---
+ MSCI_m <- MSCI %>%
+  transmute(YearMonth = dates, MSCI = MSCI)
+
+ # --- Fusion ---
+ df_all <- gold_m %>%
+  full_join(USDI_m,  by = "YearMonth") %>%
+  full_join(DFII10_m, by = "YearMonth") %>%
+  full_join(EPU_m,   by = "YearMonth") %>%
+  full_join(NFCI_m,  by = "YearMonth") %>%
+  full_join(MSCI_m,  by = "YearMonth") %>%
+  arrange(YearMonth)
+
+ str(df_all)
+ summary(df_all)
+ 
+ #Création des graph
+ library(ggplot2)
+ library(tidyr)
+ 
+ df_long_level <- df_all %>%
+   pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Valeur")
+ 
+ ggplot(df_long_level, aes(x = YearMonth, y = Valeur)) +
+   geom_line(na.rm = TRUE) +
+   facet_wrap(~ Serie, scales = "free_y", ncol = 2) +
+   labs(title = "Séries en niveau (mensuel)", x = "Date", y = "") +
+   theme_minimal()
+ 
+ #Construction des variations
+ # Helpers
+ log_return_pct <- function(x) 100 * (log(x) - log(dplyr::lag(x)))  # % log-return
+ diff_simple    <- function(x) x - dplyr::lag(x)                    # diff
+ 
+ df_var <- df_all %>%
+   arrange(YearMonth) %>%
+   mutate(
+     # Prix/indices -> log-returns %
+     dGOLD = log_return_pct(GOLD),
+     dUSDI = log_return_pct(USDI),
+     dMSCI = log_return_pct(MSCI),
+     
+     # Indices/taux -> différences
+     dDFII10 = diff_simple(DFII10),
+     dEPU    = diff_simple(EPU),
+     dNFCI   = diff_simple(NFCI)
+   ) %>%
+   select(YearMonth, dGOLD, dUSDI, dMSCI, dDFII10, dEPU, dNFCI) %>%
+   filter(!is.na(dGOLD) | !is.na(dUSDI) | !is.na(dMSCI) | !is.na(dDFII10) | !is.na(dEPU) | !is.na(dNFCI))
+ 
+ str(df_var)
+ summary(df_var)
+ 
+ 
+ #Graphiques des séries en variation
+ library(ggplot2)
+ library(tidyr)
+ 
+ df_long_var <- df_var %>%
+   pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
+ 
+ ggplot(df_long_var, aes(x = YearMonth, y = Variation)) +
+   geom_hline(yintercept = 0, linetype = "dashed") +
+   geom_line(na.rm = TRUE) +
+   facet_wrap(~ Serie, scales = "free_y", ncol = 2) +
+   labs(title = "Séries en variation (mensuel)", x = "Date", y = "") +
+   theme_minimal()
+ 
+ 
+ 
 
 
 
