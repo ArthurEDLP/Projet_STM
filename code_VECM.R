@@ -244,7 +244,7 @@ plot(stability(var_fit, type = "OLS-CUSUM"))
 ir_gold_usdi <- irf(var_level,
                     impulse = "lUSDI",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_usdi)
@@ -253,7 +253,7 @@ plot(ir_gold_usdi)
 ir_gold_dfii <- irf(var_level,
                     impulse = "DFII10",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_dfii)
@@ -262,7 +262,7 @@ plot(ir_gold_dfii)
 ir_gold_IMSCI <- irf(var_level,
                     impulse = "lMSCI",
                     response = "lGOLD",
-                    n.ahead = 36,
+                    n.ahead = 12,
                     boot = TRUE,
                     runs = 500)
 plot(ir_gold_IMSCI) 
@@ -270,7 +270,7 @@ plot(ir_gold_IMSCI)
 # ------------------------------------------------------------
 # 9) FEVD : Décomposition de la variance des erreurs de prévision
 # ------------------------------------------------------------
-fevd_res <- fevd(var_level, n.ahead = 36)
+fevd_res <- fevd(var_level, n.ahead = 12)
 
 # Afficher les tableaux (parts expliquées à chaque horizon)
 print(fevd_res)
