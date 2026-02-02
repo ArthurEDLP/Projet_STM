@@ -23,4 +23,3 @@ gold <- gold |>
 
 
 
-hfhghg
