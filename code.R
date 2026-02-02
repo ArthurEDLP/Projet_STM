@@ -2,6 +2,10 @@
 
 library(dplyr)
 library(readxl)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(TSA)
 
 # Importation des données --------------------------------------------------------------------
 
@@ -260,7 +264,6 @@ liste_des_series <- list(
 
 liste_des_series <- lapply(liste_des_series, function(x) ts(as.numeric(x), frequency = 12)) # 12 = mensuel
 
-library(TSA)
 
 for (nm in names(liste_des_series)) {
   
@@ -296,8 +299,8 @@ for (nm in names(liste_des_series)) {
 
 
  # Mise à la mème freq pour comparer 
- library(dplyr)
- library(lubridate)
+
+
 
  # --- GOLD mensuel (dernier du mois) ---
  gold_m <- gold %>%
@@ -343,8 +346,6 @@ for (nm in names(liste_des_series)) {
  summary(df_all)
  
  #Création des graph
- library(ggplot2)
- library(tidyr)
  
  df_long_level <- df_all %>%
    pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Valeur")
@@ -381,8 +382,7 @@ for (nm in names(liste_des_series)) {
  
  
  #Graphiques des séries en variation
- library(ggplot2)
- library(tidyr)
+
  
  df_long_var <- df_var %>%
    pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
@@ -400,8 +400,7 @@ for (nm in names(liste_des_series)) {
  
  
  #Visualisation des valeurs aberrantes (boxplots
- library(ggplot2)
- library(tidyr)
+
  
  df_long_var <- df_var %>%
    pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
