@@ -269,18 +269,13 @@ plot(ir_gold_IMSCI)
 
 # ------------------------------------------------------------
 # 9) FEVD : Décomposition de la variance des erreurs de prévision
+#  barplots empilés (style "figure")
 # ------------------------------------------------------------
 fevd_res <- fevd(var_level, n.ahead = 12)
 
 # Afficher les tableaux (parts expliquées à chaque horizon)
 print(fevd_res)
 
-# Graphiques automatiques (un panel par équation)
-plot(fevd_res)
-
-# ------------------------------------------------------------
-# 9bis) FEVD : barplots empilés (style "figure")
-# ------------------------------------------------------------
 
 # Fonction pour tracer un barplot empilé pour une variable donnée
 plot_fevd_stacked <- function(fevd_obj, varname, main_title = NULL) {
