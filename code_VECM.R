@@ -146,6 +146,58 @@ r = 0  | 47.58 25.56 28.14 33.24   rejet à 10%
 r <- 1
 
 # ------------------------------------------------------------
+# 5.5) Restrictions linéaires : alpha_USDI = 0
+# Teste l’exogénéité faible d’une variable, 
+# ------------------------------------------------------------
+
+# Matrice de restriction sur alpha
+# 1 ligne par variable, 1 colonne par relation de cointégration (r = 1)
+
+# lGOLD
+A_gold <- matrix(c(1,0,0,0), nrow = 4)
+test_gold <- alrtest(jo_trace, A = A_gold, r = r)
+
+# lUSDI
+A_usdi <- matrix(c(0,1,0,0), nrow = 4)
+test_usdi <- alrtest(jo_trace, A = A_usdi, r = r)
+
+# DFII10
+A_dfii <- matrix(c(0,0,1,0), nrow = 4)
+test_dfii <- alrtest(jo_trace, A = A_dfii, r = r)
+
+# lMSCI
+A_msci <- matrix(c(0,0,0,1), nrow = 4)
+test_msci <- alrtest(jo_trace, A = A_msci, r = r)
+
+## les stats:
+
+res_alpha <- data.frame(
+  Variable = c("lGOLD", "lUSDI", "DFII10", "lMSCI"),
+  Statistique = c(
+    test_gold@teststat,
+    test_usdi@teststat,
+    test_dfii@teststat,
+    test_msci@teststat
+  ),
+  p_value = c(
+    test_gold@pval,
+    test_usdi@pval,
+    test_dfii@pval,
+    test_msci@pval
+  )
+)
+
+res_alpha$Conclusion <- ifelse(
+  res_alpha$p_val < 0.05,
+  "Endogène",
+  "Faiblement exogène"
+)
+
+print(res_alpha)
+
+
+
+# ------------------------------------------------------------
 # 6.0) Choix de la spécification déterministe du VECM
 # ------------------------------------------------------------
 
