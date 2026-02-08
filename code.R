@@ -347,14 +347,31 @@ for (nm in names(liste_des_series)) {
  
  #Création des graph
  
+ library(dplyr)
+ library(tidyr)
+ library(ggplot2)
+ 
+ # Passage en format long
  df_long_level <- df_all %>%
    pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Valeur")
  
- ggplot(df_long_level, aes(x = YearMonth, y = Valeur)) +
+ # 1) Graphique OR uniquement (niveau)
+ df_gold_level <- df_long_level %>% filter(Serie == "GOLD")
+ 
+ ggplot(df_gold_level, aes(x = YearMonth, y = Valeur)) +
+   geom_line(na.rm = TRUE) +
+   labs(title = "Or (GOLD) — série en niveau (mensuel)", x = "Date", y = "") +
+   theme_minimal()
+ 
+ # 2) Graphique des autres variables (niveau)
+ df_others_level <- df_long_level %>% filter(Serie != "GOLD")
+ 
+ ggplot(df_others_level, aes(x = YearMonth, y = Valeur)) +
    geom_line(na.rm = TRUE) +
    facet_wrap(~ Serie, scales = "free_y", ncol = 2) +
-   labs(title = "Séries en niveau (mensuel)", x = "Date", y = "") +
+   labs(title = "Autres variables — séries en niveau (mensuel)", x = "Date", y = "") +
    theme_minimal()
+ 
  
  #Construction des variations
  # Helpers
@@ -384,14 +401,31 @@ for (nm in names(liste_des_series)) {
  #Graphiques des séries en variation
 
  
+ library(dplyr)
+ library(tidyr)
+ library(ggplot2)
+ 
+ # Passage en format long
  df_long_var <- df_var %>%
    pivot_longer(cols = -YearMonth, names_to = "Serie", values_to = "Variation")
  
- ggplot(df_long_var, aes(x = YearMonth, y = Variation)) +
+ # 1) Graphique OR uniquement variation
+ df_gold <- df_long_var %>% filter(Serie == "dGOLD")
+ 
+ ggplot(df_gold, aes(x = YearMonth, y = Variation)) +
+   geom_hline(yintercept = 0, linetype = "dashed") +
+   geom_line(na.rm = TRUE) +
+   labs(title = "Or (dGOLD) — variations mensuelles", x = "Date", y = "") +
+   theme_minimal()
+ 
+ # 2) Graphique des autres variables variation
+ df_others <- df_long_var %>% filter(Serie != "dGOLD")
+ 
+ ggplot(df_others, aes(x = YearMonth, y = Variation)) +
    geom_hline(yintercept = 0, linetype = "dashed") +
    geom_line(na.rm = TRUE) +
    facet_wrap(~ Serie, scales = "free_y", ncol = 2) +
-   labs(title = "Séries en variation (mensuel)", x = "Date", y = "") +
+   labs(title = "Autres variables — variations mensuelles", x = "Date", y = "") +
    theme_minimal()
  
  
